@@ -1,0 +1,3 @@
+1. 按season进行分类，常规赛，季后赛
+2. baseline model hometeamName awayteamName， history wins on away team. history wins on hometeam(用胜率还是胜场)
+3. 添加新的feature, 常规赛季后赛战绩，主客场对所有球队胜率，简言之，用常规赛季后赛，主客场，胜负场,较前一年的变化进行排列组合. 
