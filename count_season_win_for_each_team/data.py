@@ -1,6 +1,6 @@
 import csv
 import sys
-
+import math
 home_dict = {}
 away_dict = {}
 hometotal_game = {}
@@ -11,12 +11,13 @@ playoff_dict = {}
 min_year = 1947
 max_year = 2006
 stride = 1
-start_year = min_year + stride
+stride_in_playoff = 2
+start_year = min_year + max(stride, stride_in_playoff)
 inputFile = 'NBA-Game-Results-2.csv'
 outputFile = 'NBA.csv'
 fieldname = ['Season', 'Team', str(stride) + 'HisotryHomeWinRatio', str(stride) + 'HistoryAwayWinRatio',
 str(stride) + 'homeGainPoins', str(stride) + 'homeLosePoins', str(stride) + 'awayGainPoins', str(stride) + 'awayLosePoins',
- 'firstPlay', 'inPlayoff']
+str(stride_in_playoff) + 'promotion', 'firstPlay', 'playoff_ratio', 'inPlayoff']
 
 with open(inputFile, 'rU') as f:
     reader = csv.DictReader(f);
@@ -70,6 +71,10 @@ for year in range(start_year, max_year + 1):
                 home_dict[(str(year), team, str(stride) + 'losePoins')] = home_dict.get((str(year), team, str(stride) + 'losePoins'), 0) + home_dict.get((str(year - past_year), team, 'losePoins'),0)
                 away_dict[(str(year), team, str(stride) + 'gainPoins')] = away_dict.get((str(year), team, str(stride) + 'gainPoins'), 0) + away_dict.get((str(year - past_year), team, 'gainPoins'),0)
                 away_dict[(str(year), team, str(stride) + 'losePoins')] = away_dict.get((str(year), team, str(stride) + 'losePoins'), 0) + away_dict.get((str(year - past_year), team, 'losePoins'),0)
+        
+        for past_year in range(1, stride_in_playoff + 1): 
+            for team in playoff_dict[str(year - past_year)]:
+                playoff_dict[(str(year), team)] = playoff_dict.get((str(year),team),0) + 1
                 #print home_dict[(str(year), team, str(stride) + 'gainPoins')]
         for team in team_dict[str(year)]: 
                 home_dict[(str(year), team, 'winRatio')] /= (float(total_Home_game[team]) / 100)
@@ -90,14 +95,19 @@ with open(outputFile, 'wb') as f:
 #            out = 'True'
 #        else:
 #            out = 'False'
-    for year in range(start_year, max_year): 
+    for year in range(start_year, max_year + 1): 
         for team in team_dict[str(year)]:
-
             homewinRatio = home_dict[(str(year), team, 'winRatio')]
             awaywinRatio = away_dict[(str(year), team, 'winRatio')]
-            writer.writerow({'Season' : year, 'Team' : team, str(stride) + 'HisotryHomeWinRatio' :homewinRatio,  str(stride) + 'HistoryAwayWinRatio' : awaywinRatio ,
+            firstPlay = 0
+            if homewinRatio == 0 and awaywinRatio == 0:
+                firstPlay = 1
+                homewinRatio += 5
+                awaywinRatio += 5
+            writer.writerow({'Season' : year, 'Team' : team, str(stride) + 'HisotryHomeWinRatio' : homewinRatio,  str(stride) + 'HistoryAwayWinRatio' : awaywinRatio ,
                 str(stride) + 'homeGainPoins': home_dict[(str(year), team, str(stride) + 'gainPoins')],
                 str(stride) + 'homeLosePoins': home_dict[(str(year), team, str(stride) + 'losePoins')], 
                 str(stride) + 'awayGainPoins': away_dict[(str(year), team, str(stride) + 'gainPoins')],
                 str(stride) + 'awayLosePoins': away_dict[(str(year), team, str(stride) + 'losePoins')],
-                 'firstPlay': awaywinRatio == 0 and homewinRatio == 0, 'inPlayoff':team in playoff_dict[str(year)]})
+                str(stride_in_playoff) + 'promotion' : playoff_dict.get((str(year), team),0),
+                'firstPlay': firstPlay, 'playoff_ratio': len(playoff_dict[str(year)]) * 1.0 / len(team_dict[str(year)]),  'inPlayoff':team in playoff_dict[str(year)]})
